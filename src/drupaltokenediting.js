@@ -1,18 +1,47 @@
+/**
+ * @module drupaltoken/drupaltokenediting
+ */
+
 import { Plugin } from "ckeditor5/src/core";
 import { Widget } from "ckeditor5/src/widget";
 import { toWidget, viewToModelPositionOutsideModelElement } from "ckeditor5/src/widget";
-import DrupalTokenCommand from "./drupaltokencommand";
 
+import InsertDrupalTokenCommand from "./insertdrupaltokencommand";
+
+/**
+ * The drupaltoken engine plugin.
+ *
+ * It registers:
+ * * `<drupal-token>` as an inline element in the document schema
+ * * converters for editing tokens
+ * * `insertDrupalToken` command.
+ *
+ * @extends module:core/plugin~Plugin
+ */
 export default class TokenEditing extends Plugin {
+
+    /**
+     * {@inheritDoc}
+     */
+    static get pluginName() {
+        return 'DrupalTokenEditing';
+    }
+
+    /**
+     * {@inheritDoc}
+     */
     static get requires() {
         return [ Widget ];
     }
 
+    /**
+     * {@inheritDoc}
+     */
     init() {
         this._defineSchema();
         this._defineConverters();
 
-        this.editor.commands.add( 'drupaltoken', new DrupalTokenCommand( this.editor ) );
+        this.editor.commands.add( 'insertDrupalToken', new InsertDrupalTokenCommand( this.editor ) );
 
         this.editor.editing.mapper.on(
             'viewToModelPosition',
@@ -23,6 +52,11 @@ export default class TokenEditing extends Plugin {
         } );
     }
 
+    /**
+     * Registers model schema definitions.
+     *
+     * @private
+     */
     _defineSchema() {
         const schema = this.editor.model.schema;
 
@@ -35,6 +69,11 @@ export default class TokenEditing extends Plugin {
         } );
     }
 
+    /**
+     * Registers converters.
+     *
+     * @private
+     */
     _defineConverters() {
         const conversion = this.editor.conversion;
 
@@ -44,7 +83,6 @@ export default class TokenEditing extends Plugin {
                 classes: [ 'token' ]
             },
             model: ( viewElement, { writer: modelWriter } ) => {
-                // Extract the "name" from "{name}".
                 const name = viewElement.getChild( 0 ).data.slice( 1, -1 );
 
                 return modelWriter.createElement( 'drupaltoken', { name } );
@@ -54,33 +92,32 @@ export default class TokenEditing extends Plugin {
         conversion.for( 'editingDowncast' ).elementToElement( {
             model: 'drupaltoken',
             view: ( modelItem, { writer: viewWriter } ) => {
-                const widgetElement = createTokenView( modelItem, viewWriter );
-
-                // Enable widget handling on a token element inside the editing view.
+                const widgetElement = createTokenViewElement( modelItem, viewWriter );
                 return toWidget( widgetElement, viewWriter );
             }
         } );
 
         conversion.for( 'dataDowncast' ).elementToElement( {
             model: 'drupaltoken',
-            view: ( modelItem, { writer: viewWriter } ) => createTokenView( modelItem, viewWriter )
+            view: ( modelItem, { writer: viewWriter } ) => createTokenViewElement( modelItem, viewWriter )
         } );
-
-        // Helper method for both downcast converters.
-        function createTokenView( modelItem, viewWriter ) {
-            const name = modelItem.getAttribute( 'name' );
-
-            const tokenView = viewWriter.createContainerElement( 'span', {
-                class: ['token token--' + name]
-            }, {
-                isAllowedInsideAttributeElement: true
-            } );
-
-            // Insert the token name (as a text).
-            const innerText = viewWriter.createText( '[' + name + ']' );
-            viewWriter.insert( viewWriter.createPositionAt( tokenView, 0 ), innerText );
-
-            return tokenView;
-        }
     }
+}
+
+/**
+ * Creates a view element representing a drupal token.
+ *
+ * @param modelItem
+ * @param viewWriter
+ * @returns {*|module:engine/view/containerelement~ContainerElement}
+ */
+export function createTokenViewElement( modelItem, viewWriter ) {
+    const name = modelItem.getAttribute( 'name' );
+
+    const tokenView = viewWriter.createContainerElement( 'span' );
+
+    const innerText = viewWriter.createText( '[' + name + ']' );
+    viewWriter.insert( viewWriter.createPositionAt( tokenView, 0 ), innerText );
+
+    return tokenView;
 }
