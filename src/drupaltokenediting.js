@@ -47,9 +47,6 @@ export default class TokenEditing extends Plugin {
             'viewToModelPosition',
             viewToModelPositionOutsideModelElement( this.editor.model, viewElement => viewElement.hasClass( 'token' ) )
         );
-        this.editor.config.define( 'drupalTokenConfig', {
-            types: [ 'drupal-token' ]
-        } );
     }
 
     /**
@@ -76,7 +73,6 @@ export default class TokenEditing extends Plugin {
      */
     _defineConverters() {
         const conversion = this.editor.conversion;
-
         conversion.for( 'upcast' ).elementToElement( {
             view: {
                 name: 'span',
@@ -93,6 +89,7 @@ export default class TokenEditing extends Plugin {
             model: 'drupaltoken',
             view: ( modelItem, { writer: viewWriter } ) => {
                 const widgetElement = createTokenViewElement( modelItem, viewWriter );
+                viewWriter.addClass('token', widgetElement);
                 return toWidget( widgetElement, viewWriter );
             }
         } );
@@ -113,9 +110,8 @@ export default class TokenEditing extends Plugin {
  */
 export function createTokenViewElement( modelItem, viewWriter ) {
     const name = modelItem.getAttribute( 'name' );
-
     const tokenView = viewWriter.createContainerElement( 'span' );
-
+    viewWriter.addClass('token', tokenView);
     const innerText = viewWriter.createText( '[' + name + ']' );
     viewWriter.insert( viewWriter.createPositionAt( tokenView, 0 ), innerText );
 

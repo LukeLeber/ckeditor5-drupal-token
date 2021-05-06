@@ -2,10 +2,11 @@
  * @module drupaltoken/drupaltokenui
  */
 
-import { Plugin } from "ckeditor5/src/core";
-import { addListToDropdown, createDropdown } from "ckeditor5/src/ui";
-import { Collection } from "ckeditor5/src/utils";
-import { Model } from "ckeditor5/src/ui";
+import { Plugin } from 'ckeditor5/src/core';
+import { ButtonView } from 'ckeditor5/src/ui';
+import { Collection } from 'ckeditor5/src/utils';
+import { Model } from 'ckeditor5/src/ui';
+import tokenIcon from '../theme/icons/token.svg';
 
 /**
  * The drupaltoken UI plugin.
@@ -26,29 +27,38 @@ export default class DrupalTokenUI extends Plugin {
      */
     init() {
         const editor = this.editor;
-        const t = editor.t;
-        const tokenNames = editor.config.get( 'drupalTokenConfig.types' );
+        const options = editor.config.get( 'drupalToken' );
+        if (!options) {
+          return;
+        }
+
+        const { tokenBrowserURL, openDialog, dialogSettings = {} } = options;
+        if (!tokenBrowserURL || typeof openDialog !== 'function') {
+            return;
+        }
 
         editor.ui.componentFactory.add( 'drupalToken', locale => {
-            const dropdownView = createDropdown( locale );
-
-            addListToDropdown( dropdownView, getDropdownItemsDefinitions( tokenNames ) );
-
-            dropdownView.buttonView.set( {
-                label: t( 'Insert token' ),
-                tooltip: true,
-                withText: true
-            } );
-
+            const buttonView = new ButtonView(locale);
+            buttonView.set({
+              label: editor.t('Insert Drupal Token'),
+              icon: tokenIcon,
+              tooltip: true
+            });
             const command = editor.commands.get( 'insertDrupalToken' );
-            dropdownView.bind( 'isEnabled' ).to( command );
+            buttonView.bind('isOn', 'isEnabled').to(command, 'value', 'isEnabled');
 
-            this.listenTo( dropdownView, 'execute', evt => {
-                editor.execute( 'insertDrupalToken', { value: evt.source.commandParam } );
+            this.listenTo( buttonView, 'execute', evt => {
                 editor.editing.view.focus();
+                openDialog(
+                  tokenBrowserURL,
+                  ({attributes}) => {
+                    editor.execute('insertDrupalToken', attributes);
+                  },
+                  dialogSettings,
+                );
             } );
 
-            return dropdownView;
+            return buttonView;
         } );
     }
 }

@@ -9,7 +9,7 @@ import { Command } from "ckeditor5/src/core";
  *
  * @extends module:core/command~Command
  */
-export default class Insertdrupaltokencommand extends Command {
+export default class InsertDrupalTokenCommand extends Command {
 
     /**
      * Executes the command.

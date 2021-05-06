@@ -9,7 +9,4 @@ import DrupalTokenUI from './drupaltokenui';
 
 export default {
   DrupalToken,
-  InsertDrupalTokenCommand,
-  DrupalTokenEditing,
-  DrupalTokenUI,
 };
